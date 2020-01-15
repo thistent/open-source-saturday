@@ -35,7 +35,8 @@ type alias Meetup =
 
 
 type alias Address =
-    { street : String
+    { street1 : String
+    , street2 : String
     , city : String
     , state : String
     , zip : String
@@ -56,7 +57,8 @@ type Msg
 
 type MeetupMsg
     = Venue String
-    | Street String
+    | Street1 String
+    | Street2 String
     | City String
     | State String
     | Zip String
@@ -73,7 +75,8 @@ init _ =
     ( { page = AboutPage
       , meetups =
             [ { address =
-                    { street = "2780 La Mirada Dr. Suite E"
+                    { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
                     , city = "Vista"
                     , state = "CA"
                     , zip = "92081"
@@ -83,7 +86,8 @@ init _ =
               , dateTime = "now"
               }
             , { address =
-                    { street = "2780 La Mirada Dr. Suite E"
+                    { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
                     , city = "Vista"
                     , state = "CA"
                     , zip = "92081"
@@ -93,7 +97,8 @@ init _ =
               , dateTime = "now"
               }
             , { address =
-                    { street = "2780 La Mirada Dr. Suite E"
+                    { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
                     , city = "Vista"
                     , state = "CA"
                     , zip = "92081"
@@ -112,7 +117,8 @@ init _ =
 emptyMeetup : Meetup
 emptyMeetup =
     { address =
-        { street = ""
+        { street1 = ""
+        , street2 = ""
         , city = ""
         , state = ""
         , zip = ""
@@ -151,7 +157,8 @@ view model =
             ]
           <|
             column [ height fill, width fill, spacing 5 ]
-                [ el
+                [ -- Title Bar --
+                  el
                     [ padding 20
                     , width fill
                     , Font.size 30
@@ -167,62 +174,35 @@ view model =
                   <|
                     text "Open Source Saturday"
                 , column
-                    [ height fill
-                    , width fill
+                    [ width fill
+                    , height fill
                     , padding 20
                     ]
-                    [ el [ Font.size 32, padding 15, centerX ] <| text "Meetups"
-                    , column
+                    [ column
                         [ centerX
-                        , Border.width 2
-                        , Border.color <| rgb 0.7 0.7 0.7
                         ]
-                      <|
-                        List.indexedMap meetupToEl model.meetups
-                    , column
-                        [ centerX, padding 10 ]
-                        [ case model.meetupForm of
-                            Just meetup ->
-                                column [ width fill ]
-                                    [ Input.text []
-                                        { onChange = \x -> UpdateForm <| Venue x
-                                        , text = .venueName <| Maybe.withDefault emptyMeetup model.meetupForm
-                                        , placeholder = Nothing
-                                        , label =
-                                            Input.labelAbove [] <|
-                                                text "Venue Name"
-                                        }
-                                    , Input.button []
-                                        { onPress = Just CloseMeetupForm
-                                        , label =
-                                            el
-                                                [ Bg.color primaryColor
-                                                , Font.color textColor
-                                                , paddingXY 20 10
-                                                , Border.rounded 5
-                                                ]
-                                            <|
-                                                text
-                                                    "Close Form"
-                                        }
-                                    ]
-
-                            Nothing ->
-                                Input.button []
-                                    { onPress = Just OpenMeetupForm
-                                    , label =
-                                        el
-                                            [ Bg.color primaryColor
-                                            , Font.color textColor
-                                            , paddingXY 20 10
-                                            , Border.rounded 5
-                                            ]
-                                        <|
-                                            text
-                                                "Add Meetup"
-                                    }
+                        [ el
+                            [ Font.size 28, Font.bold, padding 15 ]
+                          <|
+                            text "Meetups:"
+                        , column
+                            [ centerX
+                            , Border.width 2
+                            , Border.color <| rgb 0.7 0.7 0.7
+                            , Border.rounded 5
+                            ]
+                          <|
+                            List.indexedMap meetupToEl model.meetups
+                        , column
+                            [ width fill, paddingXY 0 10 ]
+                            [ formView model.meetupForm
+                            ]
                         ]
                     ]
+                , image [ centerX, width fill, padding 100 ]
+                    { src = "/static/open-source-saturday.jpg"
+                    , description = "People at open source saturday!"
+                    }
                 , el
                     [ padding 15
                     , width fill
@@ -314,7 +294,7 @@ meetupToEl : Int -> Meetup -> Element Msg
 meetupToEl num meetup =
     row
         [ padding 20
-        , spacing 40
+        , spacing 50
         , Bg.color <|
             case modBy 2 num of
                 0 ->
@@ -331,6 +311,99 @@ meetupToEl num meetup =
         , el [ width fill ] <| text <| meetup.address.city ++ ", " ++ meetup.address.state
         , el [ width fill ] <| text meetup.dateTime
         ]
+
+
+textInput : String -> String -> (String -> Msg) -> Element Msg
+textInput labelText currentText msgFun =
+    Input.text
+        [ Border.rounded 5
+        , width fill
+        ]
+        { onChange = msgFun
+        , text = currentText
+        , placeholder = Nothing
+        , label =
+            Input.labelAbove [ paddingXY 10 0, width fill ] <|
+                text labelText
+        }
+
+
+formView : Maybe Meetup -> Element Msg
+formView meetupForm =
+    case meetupForm of
+        Just meetup ->
+            column [ width fill, spacing 15 ]
+                [ textInput
+                    "Venue Name"
+                    meetup.venueName
+                    (\x -> UpdateForm <| Venue x)
+                , textInput
+                    "Street 1"
+                    meetup.address.street1
+                    (\x -> UpdateForm <| Street1 x)
+                , textInput
+                    "Street 2"
+                    meetup.address.street2
+                    (\x -> UpdateForm <| Street2 x)
+                , row [ width fill, spacing 10 ]
+                    [ textInput
+                        "City"
+                        meetup.address.city
+                        (\x -> UpdateForm <| Street2 x)
+                    , textInput
+                        "State"
+                        meetup.address.state
+                        (\x -> UpdateForm <| Street2 x)
+                    , textInput
+                        "Zip Code"
+                        meetup.address.zip
+                        (\x -> UpdateForm <| Street2 x)
+                    ]
+                , row [ alignRight, paddingXY 5 0, spacing 5 ]
+                    [ Input.button []
+                        { onPress = Just CloseMeetupForm
+                        , label =
+                            el
+                                [ Bg.color textColor
+                                , Font.color primaryColor
+                                , paddingXY 20 10
+                                , Border.rounded 5
+                                , Border.width 2
+                                ]
+                            <|
+                                text
+                                    "Cancel Form"
+                        }
+                    , Input.button [ paddingXY 5 0 ]
+                        { onPress = Just CloseMeetupForm
+                        , label =
+                            el
+                                [ Bg.color primaryColor
+                                , Font.color textColor
+                                , paddingXY 22 12
+                                , Border.rounded 5
+                                ]
+                            <|
+                                text
+                                    "Submit Meetup"
+                        }
+                    ]
+                ]
+
+        Nothing ->
+            Input.button [ alignRight, paddingXY 5 0 ]
+                { onPress = Just OpenMeetupForm
+                , label =
+                    el
+                        [ Bg.color primaryColor
+                        , Font.color textColor
+                        , paddingXY 22 12
+                        , Border.rounded 5
+                        ]
+                    <|
+                        text
+                            "Add Meetup"
+                }
 
 
 
