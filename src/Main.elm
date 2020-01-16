@@ -27,15 +27,10 @@ type Page
 
 
 type alias Meetup =
-    { address : Address
-    , venueName : String
+    { venueName : String
     , image : String
     , dateTime : String
-    }
-
-
-type alias Address =
-    { street1 : String
+    , street1 : String
     , street2 : String
     , city : String
     , state : String
@@ -74,35 +69,29 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { page = AboutPage
       , meetups =
-            [ { address =
-                    { street1 = "2780 La Mirada Dr."
-                    , street2 = "Suite E"
-                    , city = "Vista"
-                    , state = "CA"
-                    , zip = "92081"
-                    }
+            [ { street1 = "2780 La Mirada Dr."
+              , street2 = "Suite E"
+              , city = "Vista"
+              , state = "CA"
+              , zip = "92081"
               , venueName = "Open Source Maker Labs"
               , image = ":)"
               , dateTime = "now"
               }
-            , { address =
-                    { street1 = "2780 La Mirada Dr."
-                    , street2 = "Suite E"
-                    , city = "Vista"
-                    , state = "CA"
-                    , zip = "92081"
-                    }
+            , { street1 = "2780 La Mirada Dr."
+              , street2 = "Suite E"
+              , city = "Vista"
+              , state = "CA"
+              , zip = "92081"
               , venueName = "Open Source Maker Labs"
               , image = ":)"
               , dateTime = "now"
               }
-            , { address =
-                    { street1 = "2780 La Mirada Dr."
-                    , street2 = "Suite E"
-                    , city = "Vista"
-                    , state = "CA"
-                    , zip = "92081"
-                    }
+            , { street1 = "2780 La Mirada Dr."
+              , street2 = "Suite E"
+              , city = "Vista"
+              , state = "CA"
+              , zip = "92081"
               , venueName = "Open Source Maker Labs"
               , image = ":)"
               , dateTime = "now"
@@ -116,13 +105,11 @@ init _ =
 
 emptyMeetup : Meetup
 emptyMeetup =
-    { address =
-        { street1 = ""
-        , street2 = ""
-        , city = ""
-        , state = ""
-        , zip = ""
-        }
+    { street1 = ""
+    , street2 = ""
+    , city = ""
+    , state = ""
+    , zip = ""
     , venueName = ""
     , image = ""
     , dateTime = ""
@@ -174,12 +161,14 @@ view model =
                   <|
                     text "Open Source Saturday"
                 , column
-                    [ width fill
+                    [ width <| px 900
+                    , centerX
                     , height fill
                     , padding 20
                     ]
                     [ column
                         [ centerX
+                        , width fill
                         ]
                         [ el
                             [ Font.size 28, Font.bold, padding 15 ]
@@ -187,19 +176,20 @@ view model =
                             text "Meetups:"
                         , column
                             [ centerX
+                            , width fill
                             , Border.width 2
-                            , Border.color <| rgb 0.7 0.7 0.7
+                            , Border.color <| textColorDark
                             , Border.rounded 5
                             ]
                           <|
                             List.indexedMap meetupToEl model.meetups
                         , column
-                            [ width fill, paddingXY 0 10 ]
+                            [ width fill, paddingXY 0 40 ]
                             [ formView model.meetupForm
                             ]
                         ]
                     ]
-                , image [ centerX, width fill, padding 100 ]
+                , image [ centerX, width <| px 860, paddingXY 0 40 ]
                     { src = "/static/open-source-saturday.jpg"
                     , description = "People at open source saturday!"
                     }
@@ -242,24 +232,70 @@ update msg model =
                     ( model, Cmd.none )
 
                 Just currentMeetup ->
-                    (case meetupMsg of
+                    case meetupMsg of
                         Venue venueName ->
-                            let
-                                newMeetupForm =
-                                    { currentMeetup | venueName = venueName }
-                            in
                             ( { model
-                                | meetupForm = Just newMeetupForm
+                                | meetupForm =
+                                    Just { currentMeetup | venueName = venueName }
                               }
                             , Cmd.none
                             )
 
-                        _ ->
-                            ( model, Cmd.none )
-                     {- Street street ->
-                        City cityName ->
-                     -}
-                    )
+                        Street1 street1 ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | street1 = street1 }
+                              }
+                            , Cmd.none
+                            )
+
+                        Street2 street2 ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | street2 = street2 }
+                              }
+                            , Cmd.none
+                            )
+
+                        City city ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | city = city }
+                              }
+                            , Cmd.none
+                            )
+
+                        State state ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | state = state }
+                              }
+                            , Cmd.none
+                            )
+
+                        Zip zip ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | zip = zip }
+                              }
+                            , Cmd.none
+                            )
+
+                        Image img ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | image = img }
+                              }
+                            , Cmd.none
+                            )
+
+                        DateTime dateTime ->
+                            ( { model
+                                | meetupForm =
+                                    Just { currentMeetup | dateTime = dateTime }
+                              }
+                            , Cmd.none
+                            )
 
 
 
@@ -294,31 +330,30 @@ meetupToEl : Int -> Meetup -> Element Msg
 meetupToEl num meetup =
     row
         [ padding 20
-        , spacing 50
+        , spacing 30
+        , width fill
         , Bg.color <|
             case modBy 2 num of
                 0 ->
-                    rgb 0.8 0.8 0.8
+                    textColorMid
 
                 _ ->
                     textColor
         ]
-        [ el [ width fill, Font.bold ] <|
+        [ el [ Font.bold ] <|
             text <|
                 String.fromInt (num + 1)
                     ++ "."
         , el [ width fill, Font.bold ] <| text meetup.venueName
-        , el [ width fill ] <| text <| meetup.address.city ++ ", " ++ meetup.address.state
-        , el [ width fill ] <| text meetup.dateTime
+        , el [] <| text <| meetup.city ++ ", " ++ meetup.state
+        , el [] <| text meetup.dateTime
         ]
 
 
-textInput : String -> String -> (String -> Msg) -> Element Msg
-textInput labelText currentText msgFun =
+textInput : List (Attribute Msg) -> String -> String -> (String -> Msg) -> Element Msg
+textInput attrs labelText currentText msgFun =
     Input.text
-        [ Border.rounded 5
-        , width fill
-        ]
+        attrs
         { onChange = msgFun
         , text = currentText
         , placeholder = Nothing
@@ -334,31 +369,42 @@ formView meetupForm =
         Just meetup ->
             column [ width fill, spacing 15 ]
                 [ textInput
+                    [ Border.rounded 5, width fill ]
                     "Venue Name"
                     meetup.venueName
                     (\x -> UpdateForm <| Venue x)
                 , textInput
+                    [ Border.rounded 5, width fill ]
                     "Street 1"
-                    meetup.address.street1
+                    meetup.street1
                     (\x -> UpdateForm <| Street1 x)
                 , textInput
+                    [ Border.rounded 5, width fill ]
                     "Street 2"
-                    meetup.address.street2
+                    meetup.street2
                     (\x -> UpdateForm <| Street2 x)
                 , row [ width fill, spacing 10 ]
                     [ textInput
+                        [ Border.rounded 5, width <| fillPortion 3 ]
                         "City"
-                        meetup.address.city
-                        (\x -> UpdateForm <| Street2 x)
+                        meetup.city
+                        (\x -> UpdateForm <| City x)
                     , textInput
+                        [ Border.rounded 5, width <| fillPortion 1 ]
                         "State"
-                        meetup.address.state
-                        (\x -> UpdateForm <| Street2 x)
+                        meetup.state
+                        (\x -> UpdateForm <| State x)
                     , textInput
+                        [ Border.rounded 5, width <| fillPortion 2 ]
                         "Zip Code"
-                        meetup.address.zip
-                        (\x -> UpdateForm <| Street2 x)
+                        meetup.zip
+                        (\x -> UpdateForm <| Zip x)
                     ]
+                , textInput
+                    [ Border.rounded 5, width fill ]
+                    "When is it?"
+                    meetup.dateTime
+                    (\x -> UpdateForm <| DateTime x)
                 , row [ alignRight, paddingXY 5 0, spacing 5 ]
                     [ Input.button []
                         { onPress = Just CloseMeetupForm
@@ -375,7 +421,7 @@ formView meetupForm =
                                     "Cancel Form"
                         }
                     , Input.button [ paddingXY 5 0 ]
-                        { onPress = Just CloseMeetupForm
+                        { onPress = Just <| AddMeetup meetup
                         , label =
                             el
                                 [ Bg.color primaryColor
@@ -418,6 +464,16 @@ primaryColor =
 textColor : Color
 textColor =
     rgb 0.9 0.9 0.9
+
+
+textColorMid : Color
+textColorMid =
+    textColor |> mapColor (darken 0.1)
+
+
+textColorDark : Color
+textColorDark =
+    textColor |> mapColor (darken 0.25)
 
 
 primaryColorDark : Color
