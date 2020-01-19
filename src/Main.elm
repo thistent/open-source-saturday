@@ -1,13 +1,16 @@
 module Main exposing (..)
 
+import Array exposing (Array)
 import Browser
 import Color
 import Color.Manipulate exposing (darken, lighten)
 import Element exposing (..)
 import Element.Background as Bg
 import Element.Border as Border
+import Element.Events as Event
 import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes exposing (style)
 
 
 
@@ -16,7 +19,7 @@ import Element.Input as Input
 
 type alias Model =
     { page : Page
-    , meetups : List Meetup
+    , meetups : Array ( Meetup, Bool )
     , meetupForm : Maybe Meetup
     }
 
@@ -48,6 +51,7 @@ type Msg
     | OpenMeetupForm
     | CloseMeetupForm
     | UpdateForm MeetupMsg
+    | ToggleExpanded Int
 
 
 type MeetupMsg
@@ -69,34 +73,41 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( { page = AboutPage
       , meetups =
-            [ { street1 = "2780 La Mirada Dr."
-              , street2 = "Suite E"
-              , city = "Vista"
-              , state = "CA"
-              , zip = "92081"
-              , venueName = "Open Source Maker Labs"
-              , image = ":)"
-              , dateTime = "now"
-              }
-            , { street1 = "2780 La Mirada Dr."
-              , street2 = "Suite E"
-              , city = "Vista"
-              , state = "CA"
-              , zip = "92081"
-              , venueName = "Open Source Maker Labs"
-              , image = ":)"
-              , dateTime = "now"
-              }
-            , { street1 = "2780 La Mirada Dr."
-              , street2 = "Suite E"
-              , city = "Vista"
-              , state = "CA"
-              , zip = "92081"
-              , venueName = "Open Source Maker Labs"
-              , image = ":)"
-              , dateTime = "now"
-              }
-            ]
+            Array.fromList
+                [ ( { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
+                    , city = "Vista"
+                    , state = "CA"
+                    , zip = "92081"
+                    , venueName = "Open Source Maker Labs"
+                    , image = ":)"
+                    , dateTime = "now"
+                    }
+                  , False
+                  )
+                , ( { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
+                    , city = "Vista"
+                    , state = "CA"
+                    , zip = "92081"
+                    , venueName = "Open Source Maker Labs"
+                    , image = ":)"
+                    , dateTime = "now"
+                    }
+                  , False
+                  )
+                , ( { street1 = "2780 La Mirada Dr."
+                    , street2 = "Suite E"
+                    , city = "Vista"
+                    , state = "CA"
+                    , zip = "92081"
+                    , venueName = "Open Source Maker Labs"
+                    , image = ":)"
+                    , dateTime = "now"
+                    }
+                  , False
+                  )
+                ]
       , meetupForm = Nothing
       }
     , Cmd.none
@@ -139,18 +150,33 @@ view model =
     { title = "Open Source Saturday"
     , body =
         [ Element.layout
-            [ Font.color primaryColor
-            , Bg.color textColor
-            ]
-          <|
-            column [ height fill, width fill, spacing 5 ]
-                [ -- Title Bar --
-                  el
+            ([ Font.color primaryColor
+             , Bg.color textColorDark
+
+             --, clip
+             , behindContent <|
+                image
+                    [ centerX
+                    , width fill
+                    , alpha 0.75
+                    ]
+                    { src = "/static/open-source-saturday.jpg"
+                    , description = "People at open source saturday!"
+                    }
+             , inFront <|
+                el
                     [ padding 20
                     , width fill
                     , Font.size 30
                     , Font.color textColor
                     , Bg.color primaryColor
+                    , alpha 0.8
+                    , Border.roundEach
+                        { topLeft = 0
+                        , topRight = 0
+                        , bottomLeft = 0
+                        , bottomRight = 20
+                        }
                     , Border.shadow
                         { offset = ( 0, 0 )
                         , size = 3
@@ -158,20 +184,65 @@ view model =
                         , color = rgba 0 0 0 0.25
                         }
                     ]
-                  <|
+                <|
                     text "Open Source Saturday"
-                , column
+             , inFront <|
+                case model.meetupForm of
+                    Just _ ->
+                        el
+                            [ width fill
+                            , height fill
+                            , Bg.color <| rgba 0 0 0 0.75
+                            ]
+                        <|
+                            el
+                                [ centerX
+                                , centerY
+                                , padding 40
+                                , Border.rounded 20
+                                , Bg.color <| addAlpha 0.85 textColor
+                                ]
+                            <|
+                                formView model.meetupForm
+
+                    Nothing ->
+                        none
+             ]
+                ++ (if isJust model.meetupForm then
+                        [ htmlAttribute <| style "overflow-y" "hidden"
+                        , htmlAttribute <| style "max-height" "100vh"
+                        ]
+
+                    else
+                        []
+                   )
+            )
+          <|
+            column
+                [ height fill
+                , width fill
+                , spacing 5
+                ]
+                [ -- Title Bar --
+                  column
                     [ width <| px 900
                     , centerX
                     , height fill
                     , padding 20
                     ]
-                    [ column
+                    [ el [ height <| px 400 ] none
+                    , column
                         [ centerX
                         , width fill
+                        , padding 40
+                        , Border.rounded 20
+                        , Bg.color <| addAlpha 0.85 textColor
                         ]
                         [ el
-                            [ Font.size 28, Font.bold, padding 15 ]
+                            [ Font.size 28
+                            , Font.bold
+                            , padding 15
+                            ]
                           <|
                             text "Meetups:"
                         , column
@@ -182,23 +253,35 @@ view model =
                             , Border.rounded 5
                             ]
                           <|
-                            List.indexedMap meetupToEl model.meetups
-                        , column
-                            [ width fill, paddingXY 0 40 ]
-                            [ formView model.meetupForm
-                            ]
+                            Array.toList <|
+                                Array.indexedMap meetupToEl model.meetups
+                        , Input.button [ alignRight, paddingXY 5 20 ]
+                            { onPress = Just OpenMeetupForm
+                            , label =
+                                el
+                                    [ Bg.color primaryColor
+                                    , Font.color textColor
+                                    , paddingXY 22 12
+                                    , Border.rounded 5
+                                    ]
+                                <|
+                                    text
+                                        "Add Meetup"
+                            }
                         ]
                     ]
-                , image [ centerX, width <| px 860, paddingXY 0 40 ]
-                    { src = "/static/open-source-saturday.jpg"
-                    , description = "People at open source saturday!"
-                    }
                 , el
                     [ padding 15
                     , width fill
                     , Font.color textColor
                     , Font.alignRight
                     , Bg.color primaryColorDark
+                    , Border.roundEach
+                        { topLeft = 20
+                        , topRight = 0
+                        , bottomLeft = 0
+                        , bottomRight = 0
+                        }
                     ]
                   <|
                     text "© 2020"
@@ -218,13 +301,31 @@ update msg model =
             ( { model | page = page }, Cmd.none )
 
         AddMeetup meetup ->
-            ( { model | meetups = model.meetups ++ [ meetup ] }, Cmd.none )
+            ( { model
+                | meetups = model.meetups |> Array.push ( meetup, False )
+                , meetupForm = Nothing
+              }
+            , Cmd.none
+            )
 
         OpenMeetupForm ->
             ( { model | meetupForm = Just emptyMeetup }, Cmd.none )
 
         CloseMeetupForm ->
             ( { model | meetupForm = Nothing }, Cmd.none )
+
+        ToggleExpanded index ->
+            ( { model
+                | meetups =
+                    model.meetups
+                        |> Array.set index
+                            (Array.get index model.meetups
+                                |> Maybe.withDefault ( emptyMeetup, False )
+                                |> (\( m, b ) -> ( m, not b ))
+                            )
+              }
+            , Cmd.none
+            )
 
         UpdateForm meetupMsg ->
             case model.meetupForm of
@@ -311,43 +412,58 @@ subs model =
 -- Helper Functions --
 
 
-mapColor : (Color.Color -> Color.Color) -> Color -> Color
-mapColor fun =
-    fromElColor >> fun >> toElColor
+meetupToEl : Int -> ( Meetup, Bool ) -> Element Msg
+meetupToEl num ( meetup, expanded ) =
+    Input.button [ width fill ]
+        { onPress = Just <| ToggleExpanded num
+        , label =
+            case expanded of
+                False ->
+                    row
+                        [ padding 20
+                        , spacing 30
+                        , width fill
+                        , Event.onClick <| ToggleExpanded num
+                        , Bg.color <|
+                            case modBy 2 num of
+                                0 ->
+                                    addAlpha 0.5 textColorMid
 
+                                _ ->
+                                    addAlpha 0.5 textColor
+                        ]
+                        [ el [ Font.bold ] <|
+                            text <|
+                                String.fromInt (num + 1)
+                                    ++ "."
+                        , el [ width fill, Font.bold ] <| text meetup.venueName
+                        , el [] <| text <| meetup.city ++ ", " ++ meetup.state
+                        , el [] <| text meetup.dateTime
+                        ]
 
-fromElColor : Color -> Color.Color
-fromElColor =
-    toRgb >> Color.fromRgba
+                True ->
+                    column
+                        [ padding 20
+                        , spacing 30
+                        , width fill
+                        , Event.onClick <| ToggleExpanded num
+                        , Bg.color <|
+                            case modBy 2 num of
+                                0 ->
+                                    addAlpha 0.5 textColorMid
 
-
-toElColor : Color.Color -> Color
-toElColor =
-    Color.toRgba >> fromRgb
-
-
-meetupToEl : Int -> Meetup -> Element Msg
-meetupToEl num meetup =
-    row
-        [ padding 20
-        , spacing 30
-        , width fill
-        , Bg.color <|
-            case modBy 2 num of
-                0 ->
-                    textColorMid
-
-                _ ->
-                    textColor
-        ]
-        [ el [ Font.bold ] <|
-            text <|
-                String.fromInt (num + 1)
-                    ++ "."
-        , el [ width fill, Font.bold ] <| text meetup.venueName
-        , el [] <| text <| meetup.city ++ ", " ++ meetup.state
-        , el [] <| text meetup.dateTime
-        ]
+                                _ ->
+                                    addAlpha 0.5 textColor
+                        ]
+                        [ el [ Font.bold ] <|
+                            text <|
+                                String.fromInt (num + 1)
+                                    ++ "."
+                        , el [ width fill, Font.bold ] <| text meetup.venueName
+                        , el [] <| text <| meetup.city ++ ", " ++ meetup.state
+                        , el [] <| text meetup.dateTime
+                        ]
+        }
 
 
 textInput : List (Attribute Msg) -> String -> String -> (String -> Msg) -> Element Msg
@@ -437,19 +553,17 @@ formView meetupForm =
                 ]
 
         Nothing ->
-            Input.button [ alignRight, paddingXY 5 0 ]
-                { onPress = Just OpenMeetupForm
-                , label =
-                    el
-                        [ Bg.color primaryColor
-                        , Font.color textColor
-                        , paddingXY 22 12
-                        , Border.rounded 5
-                        ]
-                    <|
-                        text
-                            "Add Meetup"
-                }
+            none
+
+
+isJust : Maybe a -> Bool
+isJust x =
+    case x of
+        Just _ ->
+            True
+
+        Nothing ->
+            False
 
 
 
@@ -476,6 +590,39 @@ textColorDark =
     textColor |> mapColor (darken 0.25)
 
 
+textColorExtraDark : Color
+textColorExtraDark =
+    textColor |> mapColor (darken 0.65)
+
+
 primaryColorDark : Color
 primaryColorDark =
     primaryColor |> mapColor (darken 0.25)
+
+
+
+-- Color Functions --
+
+
+mapColor : (Color.Color -> Color.Color) -> Color -> Color
+mapColor fun =
+    fromElColor >> fun >> toElColor
+
+
+fromElColor : Color -> Color.Color
+fromElColor =
+    toRgb >> Color.fromRgba
+
+
+toElColor : Color.Color -> Color
+toElColor =
+    Color.toRgba >> fromRgb
+
+
+addAlpha : Float -> Color -> Color
+addAlpha alpha color =
+    let
+        colorRec =
+            toRgb color
+    in
+    fromRgb { colorRec | alpha = alpha }
