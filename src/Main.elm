@@ -159,6 +159,12 @@ view model =
                     [ centerX
                     , width fill
                     , alpha 0.75
+                    , Border.shadow
+                        { offset = ( 0, 3 )
+                        , size = 1
+                        , blur = 4
+                        , color = rgba 0 0 0 0.25
+                        }
                     ]
                     { src = "/static/open-source-saturday.jpg"
                     , description = "People at open source saturday!"
@@ -174,13 +180,13 @@ view model =
                     , Border.roundEach
                         { topLeft = 0
                         , topRight = 0
-                        , bottomLeft = 0
-                        , bottomRight = 20
+                        , bottomLeft = 10
+                        , bottomRight = 10
                         }
                     , Border.shadow
-                        { offset = ( 0, 0 )
-                        , size = 3
-                        , blur = 3
+                        { offset = ( 0, 3 )
+                        , size = 1
+                        , blur = 4
                         , color = rgba 0 0 0 0.25
                         }
                     ]
@@ -200,6 +206,12 @@ view model =
                                 , centerY
                                 , padding 40
                                 , Border.rounded 20
+                                , Border.shadow
+                                    { offset = ( 0, 3 )
+                                    , size = 1
+                                    , blur = 4
+                                    , color = rgba 0 0 0 0.25
+                                    }
                                 , Bg.color <| addAlpha 0.85 textColor
                                 ]
                             <|
@@ -236,6 +248,12 @@ view model =
                         , width fill
                         , padding 40
                         , Border.rounded 20
+                        , Border.shadow
+                            { offset = ( 0, 3 )
+                            , size = 1
+                            , blur = 4
+                            , color = rgba 0 0 0 0.25
+                            }
                         , Bg.color <| addAlpha 0.85 textColor
                         ]
                         [ el
@@ -254,20 +272,8 @@ view model =
                             ]
                           <|
                             Array.toList <|
-                                Array.indexedMap meetupToEl model.meetups
-                        , Input.button [ alignRight, paddingXY 5 20 ]
-                            { onPress = Just OpenMeetupForm
-                            , label =
-                                el
-                                    [ Bg.color primaryColor
-                                    , Font.color textColor
-                                    , paddingXY 22 12
-                                    , Border.rounded 5
-                                    ]
-                                <|
-                                    text
-                                        "Add Meetup"
-                            }
+                                Array.indexedMap (meetupToEl <| isJust model.meetupForm) model.meetups
+                        , addMeetupButton <| isJust model.meetupForm
                         ]
                     ]
                 , el
@@ -277,8 +283,8 @@ view model =
                     , Font.alignRight
                     , Bg.color primaryColorDark
                     , Border.roundEach
-                        { topLeft = 20
-                        , topRight = 0
+                        { topLeft = 10
+                        , topRight = 10
                         , bottomLeft = 0
                         , bottomRight = 0
                         }
@@ -412,11 +418,35 @@ subs model =
 -- Helper Functions --
 
 
-meetupToEl : Int -> ( Meetup, Bool ) -> Element Msg
-meetupToEl num ( meetup, expanded ) =
-    Input.button [ width fill ]
-        { onPress = Just <| ToggleExpanded num
-        , label =
+addMeetupButton : Bool -> Element Msg
+addMeetupButton isFormVisible =
+    let
+        label =
+            el [ alignRight, paddingXY 5 20 ] <|
+                el
+                    [ Bg.color primaryColor
+                    , Font.color textColor
+                    , paddingXY 22 12
+                    , Border.rounded 5
+                    ]
+                <|
+                    text
+                        "Add Meetup"
+    in
+    if isFormVisible then
+        label
+
+    else
+        Input.button [ alignRight, paddingXY 5 10 ]
+            { onPress = Just OpenMeetupForm
+            , label = label
+            }
+
+
+meetupToEl : Bool -> Int -> ( Meetup, Bool ) -> Element Msg
+meetupToEl isFormVisible num ( meetup, expanded ) =
+    let
+        label =
             case expanded of
                 False ->
                     row
@@ -463,7 +493,15 @@ meetupToEl num ( meetup, expanded ) =
                         , el [] <| text <| meetup.city ++ ", " ++ meetup.state
                         , el [] <| text meetup.dateTime
                         ]
-        }
+    in
+    if isFormVisible then
+        label
+
+    else
+        Input.button [ width fill ]
+            { onPress = Just <| ToggleExpanded num
+            , label = label
+            }
 
 
 textInput : List (Attribute Msg) -> String -> String -> (String -> Msg) -> Element Msg
