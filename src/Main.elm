@@ -37,43 +37,30 @@ main =
 
 update : Msg -> Model -> Return Msg Model
 update msg model =
-    case msg of
-        ChangePage page ->
-            Return.singleton { model | page = page }
+    Return.singleton <|
+        case msg of
+            ChangePage page ->
+                { model | page = page }
 
-        AddMeetup meetup ->
-            Return.singleton
+            AddMeetup meetup ->
                 { model
                     | meetups = model.meetups |> Array.push ( meetup, False )
                     , meetupForm = Nothing
                 }
 
-        OpenMeetupForm ->
-            Return.singleton { model | meetupForm = Just Model.emptyMeetup }
+            OpenMeetupForm ->
+                { model | meetupForm = Just Model.emptyMeetup }
 
-        CloseMeetupForm ->
-            Return.singleton { model | meetupForm = Nothing }
+            CloseMeetupForm ->
+                { model | meetupForm = Nothing }
 
-        ToggleExpanded index ->
-            Return.singleton
-                { model | meetups = toggleExpand index model.meetups }
+            UpdateForm meetupMsg ->
+                model.meetupForm
+                    |> (Maybe.map <| updateMeetup meetupMsg)
+                    |> (\x -> { model | meetupForm = x })
 
-        UpdateForm meetupMsg ->
-            Return.singleton model.meetupForm
-                |> Return.map (Maybe.map <| updateMeetup meetupMsg)
-                |> Return.mapBoth UpdateForm (\x -> { model | meetupForm = x })
-
-
-toggleExpand : Int -> Array ( Meetup, Bool ) -> Array ( Meetup, Bool )
-toggleExpand index meetups =
-    let
-        setExpand ( m, exp ) =
-            Array.set index ( m, not exp ) meetups
-    in
-    meetups
-        |> Array.get index
-        |> Maybe.withDefault ( Model.emptyMeetup, True )
-        |> setExpand
+            ToggleExpanded index ->
+                { model | meetups = toggleExpanded index model.meetups }
 
 
 updateMeetup : MeetupMsg -> Meetup -> Meetup
@@ -102,6 +89,19 @@ updateMeetup meetupMsg meetup =
 
         DateTime dateTime ->
             { meetup | dateTime = dateTime }
+
+
+toggleExpanded : Int -> Array ( Meetup, Bool ) -> Array ( Meetup, Bool )
+toggleExpanded index meetups =
+    let
+        toggleCurrent : ( Meetup, Bool ) -> Array ( Meetup, Bool )
+        toggleCurrent ( meet, exp ) =
+            Array.set index ( meet, not exp ) meetups
+    in
+    meetups
+        |> Array.get index
+        |> Maybe.map toggleCurrent
+        |> Maybe.withDefault meetups
 
 
 
@@ -211,9 +211,8 @@ view model =
                         , column
                             [ centerX
                             , width fill
-                            , Border.width 2
-                            , Border.color <| Style.textColorDark
-                            , Border.rounded 5
+                            , Border.width 1
+                            , Border.color <| Style.textColorMid
                             ]
                           <|
                             Array.toList <|
@@ -243,6 +242,7 @@ view model =
 addMeetupButton : Bool -> Element Msg
 addMeetupButton isFormVisible =
     let
+        label : Element Msg
         label =
             el [ alignRight, paddingXY 5 20 ] <|
                 el
@@ -268,6 +268,7 @@ addMeetupButton isFormVisible =
 meetupToEl : Bool -> Int -> ( Meetup, Bool ) -> Element Msg
 meetupToEl isFormVisible num ( meetup, expanded ) =
     let
+        label : Element Msg
         label =
             case expanded of
                 False ->
@@ -331,21 +332,30 @@ meetupToEl isFormVisible num ( meetup, expanded ) =
                             ]
                           <|
                             text meetup.dateTime
-                        , el
-                            [ width <| px 200
-                            , padding 20
+                        , image
+                            [ width <| px 300
                             , Font.alignRight
                             , alignTop
                             ]
-                          <|
-                            text meetup.image
+                            { src = meetup.image
+                            , description =
+                                "Picture for Open Source Saturday at "
+                                    ++ meetup.venueName
+                            }
+
+                        --  <|
+                        --    text meetup.image
                         ]
     in
     if isFormVisible then
         label
 
     else
-        Input.button [ width fill ]
+        Input.button
+            [ width fill
+            , Border.width 1
+            , Border.color <| Style.textColorMid
+            ]
             { onPress = Just <| ToggleExpanded num
             , label = label
             }

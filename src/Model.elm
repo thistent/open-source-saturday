@@ -71,7 +71,7 @@ init _ =
                       , state = "CA"
                       , zip = "92081"
                       , venueName = "Open Source Maker Labs"
-                      , image = ":)"
+                      , image = "/static/open-source-saturday.jpg"
                       , dateTime = "now"
                       }
                     , False
