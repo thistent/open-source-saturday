@@ -19,8 +19,8 @@ import Model
 
 disableScroll : List (Attribute Model.Msg)
 disableScroll =
-    [ htmlAttribute <| style "overflow-y" "hidden"
-    , htmlAttribute <| style "max-height" "100vh"
+    [ htmlAttribute <| style "max-height" "100vh"
+    , htmlAttribute <| style "overflow-y" "hidden"
     ]
 
 
