@@ -6,6 +6,7 @@ module Main exposing (..)
 
 import Array exposing (Array)
 import Browser
+import Browser.Events exposing (onResize)
 import Element exposing (..)
 import Element.Background as Bg
 import Element.Border as Border
@@ -61,6 +62,9 @@ update msg model =
 
             ToggleExpanded index ->
                 { model | meetups = toggleExpanded index model.meetups }
+
+            WindowResize newSize ->
+                { model | windowSize = newSize }
 
 
 
@@ -122,7 +126,9 @@ toggleExpanded index meetups =
 
 subs : Model -> Sub Msg
 subs model =
-    Sub.batch []
+    Sub.batch
+        [ onResize <| \x y -> WindowResize ( x, y )
+        ]
 
 
 
@@ -159,7 +165,12 @@ view model =
                     , width fill
                     ]
                 <|
-                    text "Open Source Saturday"
+                    text <|
+                        "Open Source Saturday    { width = "
+                            ++ String.fromInt (Tuple.first model.windowSize)
+                            ++ ", height = "
+                            ++ String.fromInt (Tuple.second model.windowSize)
+                            ++ " }"
              ]
                 ++ (if isJust model.meetupForm then
                         [ inFront <|

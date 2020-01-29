@@ -1,6 +1,8 @@
 module Model exposing (..)
 
 import Array exposing (Array)
+import Browser.Dom as Dom
+import Task
 
 
 
@@ -11,6 +13,7 @@ type alias Model =
     { page : Page
     , meetups : Array ( Meetup, Bool )
     , meetupForm : Maybe Meetup
+    , windowSize : ( Int, Int )
     }
 
 
@@ -42,6 +45,7 @@ type Msg
     | CloseMeetupForm
     | UpdateForm MeetupMsg
     | ToggleExpanded Int
+    | WindowResize ( Int, Int )
 
 
 type MeetupMsg
@@ -77,8 +81,19 @@ init _ =
                     , False
                     )
       , meetupForm = Nothing
+      , windowSize = ( 0, 0 )
       }
-    , Cmd.none
+    , Task.attempt
+        (Result.map
+            (\window ->
+                ( round window.viewport.width
+                , round window.viewport.height
+                )
+            )
+            >> Result.withDefault ( 0, 0 )
+            >> WindowResize
+        )
+        Dom.getViewport
     )
 
 
