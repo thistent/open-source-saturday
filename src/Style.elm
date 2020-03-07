@@ -1,7 +1,6 @@
 module Style exposing (..)
 
 --import Element.Events as Event
---import Element.Font as Font
 --import Element.Input as Input
 
 import Color
@@ -9,8 +8,9 @@ import Color.Manipulate exposing (darken, lighten)
 import Element exposing (..)
 import Element.Background as Bg
 import Element.Border as Border
+import Element.Font as Font
 import Html.Attributes exposing (style)
-import Model
+import Model exposing (isJust)
 
 
 
@@ -20,7 +20,8 @@ import Model
 disableScroll : List (Attribute Model.Msg)
 disableScroll =
     [ htmlAttribute <| style "max-height" "100vh"
-    , htmlAttribute <| style "overflow-y" "hidden"
+    , htmlAttribute <| style "overflow" "hidden"
+    , htmlAttribute <| style "position" "fixed"
     ]
 
 
@@ -123,3 +124,37 @@ alternateColors index =
 
             _ ->
                 addAlpha 0.5 textColorMid
+
+
+
+-- Attribute Lists --
+
+
+layout : List (Attribute Model.Msg)
+layout =
+    [ Bg.color textColorDark
+    , clip
+    , Font.color primaryColor
+    ]
+
+
+bgImage : List (Attribute Model.Msg)
+bgImage =
+    [ alpha 0.75
+    , centerX
+    , shadow
+    , width fill
+    ]
+
+
+titleBar : List (Attribute Model.Msg)
+titleBar =
+    [ alpha 0.8
+    , Bg.color primaryColor
+    , Font.color textColor
+    , Font.size 28
+    , padding 16
+    , roundBottomCorners
+    , shadow
+    , width fill
+    ]

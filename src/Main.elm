@@ -13,7 +13,7 @@ import Element.Border as Border
 import Element.Events as Event
 import Element.Font as Font
 import Element.Input as Input
-import Model exposing (Meetup, MeetupMsg(..), Model, Msg(..))
+import Model exposing (Meetup, MeetupMsg(..), Model, Msg(..), isJust)
 import Return exposing (Return)
 import Style
 
@@ -140,75 +140,17 @@ view model =
     { title = "Open Source Saturday"
     , body =
         [ Element.layout
-            ([ behindContent <|
-                image
-                    [ alpha 0.75
-                    , centerX
-                    , Style.shadow
-                    , width fill
-                    ]
-                    { src = "/static/open-source-saturday.jpg"
-                    , description = "People at open source saturday!"
-                    }
-             , Bg.color Style.textColorDark
-             , clip
-             , Font.color Style.primaryColor
-             , inFront <|
-                el
-                    [ alpha 0.8
-                    , Bg.color Style.primaryColor
-                    , Font.color Style.textColor
-                    , Font.size 30
-                    , padding 20
-                    , Style.roundBottomCorners
-                    , Style.shadow
-                    , width fill
-                    ]
-                <|
-                    text <|
-                        "Open Source Saturday    { width = "
-                            ++ String.fromInt (Tuple.first model.windowSize)
-                            ++ ", height = "
-                            ++ String.fromInt (Tuple.second model.windowSize)
-                            ++ " }"
-             ]
-                ++ (if isJust model.meetupForm then
-                        [ inFront <|
-                            el
-                                [ Bg.color <| rgba 0 0 0 0.75
-                                , height fill
-                                , width fill
-                                ]
-                            <|
-                                el
-                                    [ Bg.color <|
-                                        Style.addAlpha 0.85 Style.textColor
-                                    , Border.rounded 20
-                                    , centerX
-                                    , centerY
-                                    , padding 40
-                                    , Style.shadow
-                                    ]
-                                <|
-                                    Maybe.withDefault none <|
-                                        Maybe.map formView model.meetupForm
-                        ]
-                            ++ Style.disableScroll
-
-                    else
-                        []
-                   )
+            (Style.layout
+                ++ bgImage model.windowSize
+                ++ meetupFormModal model.meetupForm
             )
           <|
             column
-                [ height fill
-                , spacing 5
-                , width fill
-                ]
+                [ width fill, height fill ]
                 [ column
-                    [ centerX
+                    [ width <| px 900
                     , height fill
-                    , width <| px 900
+                    , centerX
                     , padding 20
                     ]
                     [ el [ height <| px 440 ] none
@@ -230,7 +172,13 @@ view model =
                             text "Meetups:"
                         , column
                             [ centerX
-                            , Style.shadow
+                            , height <| px 300
+                            , scrollbarY
+                            , if Array.isEmpty model.meetups then
+                                transparent True
+
+                              else
+                                Style.shadow
                             , width fill
                             ]
                           <|
@@ -247,7 +195,8 @@ view model =
                     [ Bg.color Style.primaryColorDark
                     , Font.alignRight
                     , Font.color Style.textColor
-                    , padding 15
+                    , Font.size 18
+                    , padding 13
                     , Style.roundTopCorners
                     , width fill
                     ]
@@ -301,7 +250,9 @@ meetupToEl isFormVisible num ( meetup, expanded ) =
                     , width fill
                     ]
                     [ column
-                        [ Event.onClick <| ToggleExpanded num
+                        [ alignLeft
+                        , alignTop
+                        , Event.onClick <| ToggleExpanded num
                         , padding 20
                         , spacing 10
                         , width fill
@@ -324,14 +275,13 @@ meetupToEl isFormVisible num ( meetup, expanded ) =
                                     ++ ", "
                                     ++ meetup.zip
                         ]
-                    , el
+                    , paragraph
                         [ alignTop
                         , Font.alignRight
                         , padding 20
                         , width fill
                         ]
-                      <|
-                        text meetup.dateTime
+                        [ text meetup.dateTime ]
                     , image
                         [ alignTop
                         , Font.alignRight
@@ -349,7 +299,8 @@ meetupToEl isFormVisible num ( meetup, expanded ) =
 
             else
                 row
-                    [ Event.onClick <| ToggleExpanded num
+                    [ alignTop
+                    , Event.onClick <| ToggleExpanded num
                     , padding 20
                     , spacing 30
                     , Style.alternateColors num
@@ -478,15 +429,52 @@ formView meetup =
         ]
 
 
+bgImage : ( Int, Int ) -> List (Attribute Msg)
+bgImage windowSize =
+    [ behindContent <|
+        image
+            Style.bgImage
+            { src = "/static/open-source-saturday.jpg"
+            , description = "People at open source saturday!"
+            }
+    , inFront <|
+        el
+            Style.titleBar
+        <|
+            text <|
+                "Open Source Saturday  { width = "
+                    ++ String.fromInt (Tuple.first windowSize)
+                    ++ ", height = "
+                    ++ String.fromInt (Tuple.second windowSize)
+                    ++ " }"
+    ]
 
--- Helper Functions --
 
+meetupFormModal :
+    Maybe Model.Meetup
+    -> List (Attribute Model.Msg)
+meetupFormModal meetupForm =
+    if isJust meetupForm then
+        [ inFront <|
+            el
+                [ Bg.color <| rgba 0 0 0 0.75
+                , height fill
+                , width fill
+                ]
+            <|
+                el
+                    [ Bg.color <| Style.addAlpha 0.85 Style.textColor
+                    , Border.rounded 20
+                    , centerX
+                    , centerY
+                    , padding 40
+                    , Style.shadow
+                    ]
+                <|
+                    Maybe.withDefault none <|
+                        Maybe.map formView meetupForm
+        ]
+            ++ Style.disableScroll
 
-isJust : Maybe a -> Bool
-isJust x =
-    case x of
-        Just _ ->
-            True
-
-        Nothing ->
-            False
+    else
+        []
